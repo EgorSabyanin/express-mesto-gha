@@ -25,7 +25,7 @@ const ERROR_DEFAULT = 500;
  * ! Стандартный мессенж ошибки
  */
 
-const dafaultErrorMessage = 'Произошла ошибка, мы сожалеем :(';
+const defaultErrorMessage = 'Произошла ошибка, мы сожалеем :(';
 
 module.exports = {
   SUCCESS_SUCCESS,
@@ -33,5 +33,5 @@ module.exports = {
   ERROR_INVALID_DATA,
   ERROR_NOT_FOUND,
   ERROR_DEFAULT,
-  dafaultErrorMessage,
+  defaultErrorMessage,
 };

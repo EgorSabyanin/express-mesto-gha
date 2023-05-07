@@ -6,6 +6,10 @@ const {
   ERROR_NOT_FOUND,
 } = require('../constants/constants');
 
-router.use(userRouter, cardRouter, (req, res) => { res.status(ERROR_NOT_FOUND).send({ message: '404 Not Found' }); });
+router.use('/users', userRouter);
+router.use('/cards', cardRouter);
+router.use('/*', (req, res) => {
+  res.status(ERROR_NOT_FOUND).send({ message: 'Такой страницы нет' });
+});
 
 module.exports = router;

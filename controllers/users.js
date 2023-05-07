@@ -6,27 +6,28 @@ const {
   ERROR_INVALID_DATA,
   ERROR_NOT_FOUND,
   ERROR_DEFAULT,
-  dafaultErrorMessage,
+  defaultErrorMessage,
 } = require('../constants/constants');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(SUCCESS_SUCCESS).send(users))
-    .catch(() => res.status(ERROR_DEFAULT).send({ message: dafaultErrorMessage }));
+    .catch(() => res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage }));
 };
 
 module.exports.getUserById = (req, res) => {
   User.findById(req.params.userId).then((user) => {
     res.status(SUCCESS_SUCCESS).send(user);
-  }).catch((error) => {
-    if (error.name === 'DocumentNotFoundError') {
-      return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь не найден' });
-    }
-    if (error.name === 'CastError') {
-      return res.status(ERROR_INVALID_DATA).send({ message: 'Введен некорректный ID' });
-    }
-    return res.status(ERROR_DEFAULT).send({ message: dafaultErrorMessage });
-  });
+  }).orFail(new Error('DocumentNotFoundError'))
+    .catch((error) => {
+      if (error.name === 'DocumentNotFoundError') {
+        return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь не найден' });
+      }
+      if (error.name === 'CastError') {
+        return res.status(ERROR_INVALID_DATA).send({ message: 'Введен некорректный ID' });
+      }
+      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
+    });
 };
 
 module.exports.createUser = (req, res) => {
@@ -39,16 +40,12 @@ module.exports.createUser = (req, res) => {
       if (error.name === 'ValidationError') {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании пользователя' });
       }
-      return res.status(ERROR_DEFAULT).send({ message: dafaultErrorMessage });
+      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
 };
 
 module.exports.updateUserProfile = (req, res) => {
   const { name, about } = req.body || {};
-
-  if (!name || !about) {
-    return res.status(ERROR_INVALID_DATA).send({ message: 'Переданны некорректные данные при обновлении профиля пользователя' });
-  }
 
   User.findByIdAndUpdate(req.user._id, { name, about }, {
     new: true,
@@ -56,33 +53,35 @@ module.exports.updateUserProfile = (req, res) => {
   })
     .then((user) => {
       res.status(SUCCESS_SUCCESS).send(user);
-    }).catch((error) => {
-      if (error.name === 'CastError') {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Невалидные данные для обновления профиля пользователя' });
+    }).orFail(new Error('DocumentNotFoundError'))
+    .catch((error) => {
+      if (error.name === 'ValidationError') {
+        return res.status(ERROR_INVALID_DATA).send({ message: 'Введены не валидные данные для пользователя' });
       }
-
       if (error.name === 'DocumentNotFoundError') {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователя с таким ID не сущесвует' });
       }
+
+      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
 };
 
 module.exports.updateUserAvatar = (req, res) => {
   const { avatar } = req.body || {};
 
-  if (!avatar) {
-    return res.status(ERROR_INVALID_DATA).send({ message: 'Переданы некорректные данные при обновлении аватара' });
-  }
-
-  User.findByIdAndUpdate(req.user._id, { avatar })
+  User.findByIdAndUpdate(req.user._id, { avatar }, {
+    new: true,
+    runValidators: true,
+  })
     .then((user) => res.status(SUCCESS_SUCCESS).send(user))
+    .orFail(new Error('DocumentNotFoundError'))
     .catch((error) => {
-      if (error.message === 'CastError') {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Невалидные данные для обновления аватара' });
+      if (error.name === 'ValidationError') {
+        return res.status(ERROR_INVALID_DATA).send({ message: 'Получены невалидные данные' });
       }
       if (error.name === 'DocumentNotFoundError') {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Нет пользователя с таким ID.' });
       }
-      return res.status(ERROR_DEFAULT).send({ message: dafaultErrorMessage });
+      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
 };
