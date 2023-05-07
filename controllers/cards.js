@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Card = require('../models/card');
 
 const {
@@ -19,12 +20,12 @@ module.exports.deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.cardId)
     .then((card) => {
       res.status(SUCCESS_SUCCESS).send(card);
-    }).orFail(new Error('DocumentNotFoundError'))
+    })
     .catch((error) => {
-      if (error.name === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не была найдена ' });
       }
-      if (error.name === 'CastError') {
+      if (error instanceof mongoose.Error.CastError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Введен некорректный ID' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
@@ -38,7 +39,7 @@ module.exports.createCard = (req, res) => {
   Card.create({ name, link, owner })
     .then((createdCard) => res.status(SUCCESS_CREATED).send(createdCard))
     .catch((error) => {
-      if (error.name === 'ValidationError') {
+      if (error instanceof mongoose.Error.CastError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании карточки' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
@@ -47,17 +48,16 @@ module.exports.createCard = (req, res) => {
 
 module.exports.addLikeCard = (req, res) => {
   Card.findByIdAndUpdate(
-    req.params.id,
+    req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   ).then((card) => res.send(card))
-    .orFail(new Error('DocumentNotFoundError'))
     .catch((error) => {
-      if (error.message === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не найдена' });
       }
 
-      if (error.name === 'CastError') {
+      if (error instanceof mongoose.Error.CastError) {
         res.status(ERROR_INVALID_DATA).send({ message: 'Переданы некорректные данные для постановки лайка' });
       }
 
@@ -67,16 +67,15 @@ module.exports.addLikeCard = (req, res) => {
 
 module.exports.dislikeCard = (req, res) => {
   Card.findByIdAndUpdate(
-    req.params.id,
+    req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   ).then((card) => res.send(card))
-    .orFail(new Error('DocumentNotFoundError'))
     .catch((error) => {
-      if (error.name === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не найдена' });
       }
-      if (error.name === 'CastError') {
+      if (error instanceof mongoose.Error.CastError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Переданы некорректные данные для удаления лайка' });
       }
       return res.status(ERROR_DEFAULT).send({ message: 'Ошибка запроса' });

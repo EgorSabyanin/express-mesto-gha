@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/user');
 
 const {
@@ -18,12 +19,12 @@ module.exports.getUsers = (req, res) => {
 module.exports.getUserById = (req, res) => {
   User.findById(req.params.userId).then((user) => {
     res.status(SUCCESS_SUCCESS).send(user);
-  }).orFail(new Error('DocumentNotFoundError'))
+  })
     .catch((error) => {
-      if (error.name === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователь не найден' });
       }
-      if (error.name === 'CastError') {
+      if (error instanceof mongoose.Error.CastError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Введен некорректный ID' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
@@ -37,7 +38,7 @@ module.exports.createUser = (req, res) => {
   User.create({ name, about, avatar })
     .then((createdUser) => res.status(SUCCESS_CREATED).send(createdUser))
     .catch((error) => {
-      if (error.name === 'ValidationError') {
+      if (error instanceof mongoose.Error.CastError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании пользователя' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
@@ -53,15 +54,14 @@ module.exports.updateUserProfile = (req, res) => {
   })
     .then((user) => {
       res.status(SUCCESS_SUCCESS).send(user);
-    }).orFail(new Error('DocumentNotFoundError'))
+    })
     .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Введены не валидные данные для пользователя' });
-      }
-      if (error.name === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователя с таким ID не сущесвует' });
       }
-
+      if (error instanceof mongoose.Error.CastError) {
+        return res.status(ERROR_INVALID_DATA).send({ message: 'Введены не валидные данные для пользователя' });
+      }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
 };
@@ -74,13 +74,12 @@ module.exports.updateUserAvatar = (req, res) => {
     runValidators: true,
   })
     .then((user) => res.status(SUCCESS_SUCCESS).send(user))
-    .orFail(new Error('DocumentNotFoundError'))
     .catch((error) => {
-      if (error.name === 'ValidationError') {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Получены невалидные данные' });
-      }
-      if (error.name === 'DocumentNotFoundError') {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Нет пользователя с таким ID.' });
+      }
+      if (error instanceof mongoose.Error.CastError) {
+        return res.status(ERROR_INVALID_DATA).send({ message: 'Получены невалидные данные' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
