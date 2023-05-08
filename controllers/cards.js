@@ -18,6 +18,7 @@ module.exports.getCards = (req, res) => {
 
 module.exports.deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.cardId)
+    .orFail()
     .then((card) => {
       res.status(SUCCESS_SUCCESS).send(card);
     })
@@ -39,7 +40,7 @@ module.exports.createCard = (req, res) => {
   Card.create({ name, link, owner })
     .then((createdCard) => res.status(SUCCESS_CREATED).send(createdCard))
     .catch((error) => {
-      if (error instanceof mongoose.Error.CastError) {
+      if (error instanceof mongoose.Error.ValidationError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании карточки' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
@@ -51,7 +52,8 @@ module.exports.addLikeCard = (req, res) => {
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
-  ).then((card) => res.send(card))
+  ).orFail()
+    .then((card) => res.send(card))
     .catch((error) => {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не найдена' });
@@ -70,7 +72,8 @@ module.exports.dislikeCard = (req, res) => {
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
-  ).then((card) => res.send(card))
+  ).orFail()
+    .then((card) => res.send(card))
     .catch((error) => {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не найдена' });
