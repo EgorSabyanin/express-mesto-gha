@@ -82,7 +82,7 @@ module.exports.updateUserAvatar = (req, res) => {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Нет пользователя с таким ID.' });
       }
-      if (error instanceof mongoose.Error.CastError) {
+      if (error instanceof mongoose.Error.ValidationError) {
         return res.status(ERROR_INVALID_DATA).send({ message: 'Получены невалидные данные' });
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
