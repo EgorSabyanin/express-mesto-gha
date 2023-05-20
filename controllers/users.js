@@ -52,7 +52,9 @@ module.exports.createUser = (req, res, next) => {
       User.create({
         name, about, avatar, password: hash, email,
       })
-        .then((createdUser) => res.status(SUCCESS_CREATED).send(createdUser))
+        .then(() => res.status(SUCCESS_CREATED).send({
+          name, about, avatar, email,
+        }))
         .catch((error) => {
           if (error instanceof mongoose.Error.ValidationError) {
             return next(new RequestError('Некорректные данные при создании пользователя'));
@@ -62,6 +64,14 @@ module.exports.createUser = (req, res, next) => {
           }
           return next(error);
         });
+    }).catch((error) => {
+      if (error instanceof mongoose.Error.ValidationError) {
+        return next(new RequestError('Некорректные данные при создании пользователя'));
+      }
+      if (error.code === 11000) {
+        return next(new ConflictError('Пользователь с таким email уже существует'));
+      }
+      return next(error);
     });
 };
 
@@ -135,7 +145,7 @@ module.exports.login = (req, res, next) => {
           return res.send({ token });
         });
     })
-    .catch((error) => { res.send({ error }); });
+    .catch(next);
 };
 
 module.exports.getMyUser = (req, res, next) => {

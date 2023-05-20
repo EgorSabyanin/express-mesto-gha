@@ -8,10 +8,12 @@ const {
   deleteCardById,
 } = require('../controllers/cards');
 
+const { createCardJoi, checkCardIdJoi } = require('../middlewares/celebrate');
+
 cardsRouter.get('/cards', getCards);
-cardsRouter.post('/cards', createCard);
-cardsRouter.patch('/cards/:cardId/likes', addLikeCard);
-cardsRouter.delete('/cards/:cardId/likes', dislikeCard);
-cardsRouter.delete('/cards/:cardId', deleteCardById);
+cardsRouter.post('/cards', createCardJoi, createCard);
+cardsRouter.patch('/cards/:cardId/likes', checkCardIdJoi, addLikeCard);
+cardsRouter.delete('/cards/:cardId/likes', checkCardIdJoi, dislikeCard);
+cardsRouter.delete('/cards/:cardId', checkCardIdJoi, deleteCardById);
 
 module.exports = cardsRouter;

@@ -1,11 +1,21 @@
 const router = require('express').Router();
+const { errors } = require('celebrate');
+
 const usersRouter = require('./users');
 const cardsRouter = require('./cards');
 
-const {
-  ERROR_NOT_FOUND,
-} = require('../constants/constants');
+const NotFoundError = require('../errors/notFoundError');
 
-router.use(usersRouter, cardsRouter, (req, res) => { res.status(ERROR_NOT_FOUND).send({ message: 'Страница не найдена' }); });
+const { login, createUser } = require('../controllers/users');
+const { createUserJoi, loginJoi } = require('../middlewares/celebrate');
+const authorizationMiddleware = require('../middlewares/auth');
+
+router.post('/signin', loginJoi, login);
+router.post('/signup', createUserJoi, createUser);
+
+router.use(authorizationMiddleware);
+
+router.use(usersRouter, cardsRouter, (req, res, next) => { next(new NotFoundError('Страницы не существует')); });
+router.use(errors({ message: 'Ошибка при валидации' }));
 
 module.exports = router;
