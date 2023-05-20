@@ -1,21 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
+const handleUnexpectedErrorsMiddleware = require('./middlewares/handleUnexpectedErrors');
+
 const router = require('./routes/index');
 
-const { DB_CONNECTION = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, DB_CONNECTION = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
 
 const app = express();
 
 app.use(express.json());
-app.use((req, res, next) => {
-  req.user = {
-    _id: '64564579d29e270373c7dc0a',
-  };
-
-  next();
-});
 app.use(router);
 
 // Подключение к БД
@@ -27,6 +21,8 @@ mongoose.connect(DB_CONNECTION, {
 }).catch((error) => {
   console.error('Ошибка при подключении к БД:', error);
 });
+
+app.use(handleUnexpectedErrorsMiddleware);
 
 app.listen(PORT, (error) => {
   if (error) {

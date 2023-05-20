@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
 
+const AuthorizationError = require('../errors/authError');
+const NotFoundError = require('../errors/notFoundError');
+const RequestError = require('../errors/requestError');
+
 const {
   SUCCESS_SUCCESS,
   SUCCESS_CREATED,
@@ -16,20 +20,29 @@ module.exports.getCards = (req, res) => {
     .catch(() => res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage }));
 };
 
-module.exports.deleteCardById = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+module.exports.deleteCardById = (req, res, next) => {
+  const currentUserId = req.user._id;
+
+  Card.findById(req.params.cardId)
     .orFail()
     .then((card) => {
-      res.status(SUCCESS_SUCCESS).send(card);
+      if (card.owner.toString() !== currentUserId) {
+        throw new AuthorizationError('Вы не можете удалять чужие карточки');
+      }
+
+      return Card.findByIdAndRemove(req.params.cardId);
     })
+    .then((deletedCard) => res.status(SUCCESS_SUCCESS).send(deletedCard))
     .catch((error) => {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Карточка не была найдена ' });
+        return next(new NotFoundError('Карточка не найдена'));
       }
-      if (error instanceof mongoose.Error.CastError) {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Введен некорректный ID' });
+
+      if (error instanceof mongoose.Error.ValidationError) {
+        return next(new RequestError('Получен некорректный ID для удаления карточки'));
       }
-      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
+
+      return next(error);
     });
 };
 
