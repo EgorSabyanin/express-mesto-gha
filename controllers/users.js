@@ -1,3 +1,6 @@
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 
@@ -34,16 +37,27 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name,
+    about,
+    avatar,
+    password,
+    email,
+  } = req.body;
 
   // Запись пользователя в БД
-  User.create({ name, about, avatar })
-    .then((createdUser) => res.status(SUCCESS_CREATED).send(createdUser))
-    .catch((error) => {
-      if (error instanceof mongoose.Error.ValidationError) {
-        return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании пользователя' });
-      }
-      return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
+  bcrypt.hash(password, 15)
+    .then((hash) => {
+      User.create({
+        name, about, avatar, password: hash, email,
+      })
+        .then((createdUser) => res.status(SUCCESS_CREATED).send(createdUser))
+        .catch((error) => {
+          if (error instanceof mongoose.Error.ValidationError) {
+            return res.status(ERROR_INVALID_DATA).send({ message: 'Получены некорректные данные при создании пользователя' });
+          }
+          return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
+        });
     });
 };
 
@@ -87,4 +101,34 @@ module.exports.updateUserAvatar = (req, res) => {
       }
       return res.status(ERROR_DEFAULT).send({ message: defaultErrorMessage });
     });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return res.status(ERROR_NOT_FOUND).send({ message: 'Пользователя не существует' });
+      }
+
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return res.status(401).send({ message: 'Пароль или логин не совпадают' });
+          }
+
+          const token = jwt.sign(
+            { _id: user._id },
+            'big-secret',
+            {
+              expiresIn: '7d',
+              httpOnly: true,
+            },
+          );
+
+          return res.send({ token });
+        });
+    })
+    .catch((error) => { res.send({ error }); });
 };
