@@ -52,9 +52,14 @@ module.exports.createUser = (req, res, next) => {
       User.create({
         name, about, avatar, password: hash, email,
       })
-        .then(() => res.status(SUCCESS_CREATED).send({
-          name, about, avatar, email,
-        }))
+        .then(() => {
+          res.status(SUCCESS_CREATED).send({
+            name,
+            about,
+            avatar,
+            email,
+          });
+        })
         .catch((error) => {
           if (error instanceof mongoose.Error.ValidationError) {
             return next(new RequestError('Некорректные данные при создании пользователя'));
@@ -64,15 +69,7 @@ module.exports.createUser = (req, res, next) => {
           }
           return next(error);
         });
-    }).catch((error) => {
-      if (error instanceof mongoose.Error.ValidationError) {
-        return next(new RequestError('Некорректные данные при создании пользователя'));
-      }
-      if (error.code === 11000) {
-        return next(new ConflictError('Пользователь с таким email уже существует'));
-      }
-      return next(error);
-    });
+    }).catch(next);
 };
 
 module.exports.updateUserProfile = (req, res, next) => {
@@ -121,7 +118,7 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   User.findOne({ email })
-    .select('+passoword')
+    .select('+password')
     .then((user) => {
       if (!user) {
         return next(new AuthorizationError('Такого пользователя не существует. Проверьте логин или пароль'));
@@ -138,11 +135,10 @@ module.exports.login = (req, res, next) => {
             'big-secret',
             {
               expiresIn: '7d',
-              httpOnly: true,
             },
           );
 
-          return res.send({ token });
+          return res.status(SUCCESS_SUCCESS).send({ token });
         });
     })
     .catch(next);

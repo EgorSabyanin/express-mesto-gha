@@ -13,8 +13,7 @@ const authorizationMiddleware = require('../middlewares/auth');
 router.post('/signin', loginJoi, login);
 router.post('/signup', createUserJoi, createUser);
 
-router.use(authorizationMiddleware);
-
+router.use(authorizationMiddleware); /* Защита роутинга для неавторизованных пользователей */
 router.use(usersRouter, cardsRouter, (req, res, next) => { next(new NotFoundError('Страницы не существует')); });
 router.use(errors({ message: 'Ошибка при валидации' }));
 

@@ -12,7 +12,7 @@ const { createCardJoi, checkCardIdJoi } = require('../middlewares/celebrate');
 
 cardsRouter.get('/cards', getCards);
 cardsRouter.post('/cards', createCardJoi, createCard);
-cardsRouter.patch('/cards/:cardId/likes', checkCardIdJoi, addLikeCard);
+cardsRouter.put('/cards/:cardId/likes', checkCardIdJoi, addLikeCard);
 cardsRouter.delete('/cards/:cardId/likes', checkCardIdJoi, dislikeCard);
 cardsRouter.delete('/cards/:cardId', checkCardIdJoi, deleteCardById);
 
