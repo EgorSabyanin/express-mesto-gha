@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { errors } = require('celebrate');
 
 const handleUnexpectedErrorsMiddleware = require('./middlewares/handleUnexpectedErrors');
 
@@ -23,6 +24,7 @@ mongoose.connect(DB_CONNECTION, {
 });
 
 app.use(handleUnexpectedErrorsMiddleware);
+app.use(errors());
 
 app.listen(PORT, (error) => {
   if (error) {
