@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const { errors } = require('celebrate');
 
 const usersRouter = require('./users');
 const cardsRouter = require('./cards');
