@@ -23,8 +23,8 @@ mongoose.connect(DB_CONNECTION, {
   console.error('Ошибка при подключении к БД:', error);
 });
 
-app.use(handleUnexpectedErrorsMiddleware);
 app.use(errors());
+app.use(handleUnexpectedErrorsMiddleware);
 
 app.listen(PORT, (error) => {
   if (error) {
